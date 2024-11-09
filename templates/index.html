@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Element Prediction</title>
+    <style>
+      body {
+ font-family: Arial, sans-serif;
+ margin: 0;
+ padding: 0;
+ /* background-color: #f0f0f0;  */
+ /* background-image: url("{{ url_for('static', filename='bg3.jpg') }}"); */
+ background: #C9D6FF;  /* fallback for old browsers */
+background: -webkit-linear-gradient(to right, #E2E2E2, #C9D6FF);  /* Chrome 10-25, Safari 5.1-6 */
+background: linear-gradient(to right, #E2E2E2, #C9D6FF); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+
+
+
+
+
+}
+
+
+h1 {
+ font-size: 2.5em;
+ color: #333;
+ text-align: center;
+ margin: 1.5rem 0;
+ font-family: 'Times New Roman', Times, serif;
+}
+
+form {
+ width: 300px;
+ margin: 0 auto;
+}
+
+label {
+ display: block;
+ font-size: 1.2em;
+ margin-top: 1rem;
+}
+
+input[type="number"] {
+ width: 100%;
+ padding: 0.5rem;
+ font-size: 1.2em;
+ margin-top: 0.5rem;
+}
+
+input[type="submit"] {
+ width: 100%;
+ padding: 0.5rem;
+ font-size: 1.2em;
+ background-color: #4CAF50;
+ color: white;
+ border: none;
+ margin-top: 1rem;
+ cursor: pointer;
+ margin-left: 8px;
+}
+
+input[type="submit"]:hover{
+  background-color: #39b93d;
+}
+
+#result {
+ width: 500px;
+ margin: 3rem auto;
+ padding: 1.5rem;
+ background-color: white;
+ border-radius: 5px;
+ box-shadow: 0 0 10px rgba(0,0,0,0.1);
+ text-align: center;
+}
+
+#result p {
+ font-size: 1.5em;
+ margin: 0.5rem 0;
+}
+
+#chemical_properties {
+  display: none;
+ width: 500px;
+ margin: 3rem auto;
+ padding: 1.5rem;
+ background-color: white;
+ border-radius: 5px;
+ box-shadow: 0 0 10px rgba(0,0,0,0.1);
+ text-align: center;
+}
+
+#chemical_properties ol{
+  list-style: none;
+}
+    </style>
+
+  </head>
+  <body>
+ <h1>Prediction of Element</h1>
+ <form method="post">
+ <label for="melting_point">Melting Point (K):</label><br>
+ <input type="number" id="melting_point" name="melting_point" step="0.1" required><br>
+ <label for="boiling_point">Boiling Point (K):</label><br>
+ <input type="number" id="boiling_point" name="boiling_point" step="0.1" required><br>
+ <input type="submit" value="Predict">
+ </form>
+
+ <div id="result" style="display:none;">
+ <p>The predicted element is: <span id="predicted_element" style="color: rgb(48, 255, 51); font-size: 1.5em;"></span></p>
+ <p>The atomic number of the predicted element is: <span id="atomic_number" style="color: rgb(11, 133, 255);"></span></p>
+ </div>
+
+ <div id="chemical_properties" style="font-size: 1.5em;">
+
+ </div>
+</body>
+
+
+    <script>
+      document.querySelector('form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        const melting_point = formData.get('melting_point');
+        const boiling_point = formData.get('boiling_point');
+    
+        const response = await fetch('/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: `melting_point=${melting_point}&boiling_point=${boiling_point}`
+        });
+    
+        try {
+          const data = await response.json();
+    
+          if (data.error) {
+            console.error('Server error:', data.error);
+            // Handle the error as needed, e.g., display an error message to the user
+          } else {
+            document.getElementById('predicted_element').innerText = data.predicted_element;
+            document.getElementById('atomic_number').innerText = data.atomic_number;
+            document.getElementById('result').style.display = 'block';
+    
+            // Display additional properties for the predicted element
+            displayChemicalProperties(data.predicted_element);
+          }
+        } catch (error) {
+          console.error('Error parsing JSON:', error);
+          // Handle the parsing error, e.g., display an error message to the user
+        }
+      });
+    
+      function displayChemicalProperties(element) {
+        // Properties for various elements
+        const chemicalProperties = {
+          'Hydrogen': {
+            electronicConfiguration: 'Hydrogen has one electron in its outer shell. (1s¹)',
+            isotopes: 'Three isotopes: protium (¹H), deuterium (²H), and tritium (³H).',
+            atomicMass: 'Atomic mass: 1.008 u'
+          },
+          'Helium': {
+            electronicConfiguration: 'Helium has two electrons in its outer shell. (1s²)',
+            isotopes: 'Two stable isotopes: helium-3 and helium-4.',
+            atomicMass: 'Atomic mass: 4.0026 u'
+          },          
+     'Lithium': {
+    electronicConfiguration: 'Lithium has 3 electrons (1s² 2s¹)',
+    isotopes: 'Two stable isotopes: lithium-6 and lithium-7.',
+    atomicMass: 'Atomic mass: 6.94 u'
+  },
+  'Beryllium': {
+    electronicConfiguration: 'Beryllium has 4 electrons (1s² 2s²)',
+    isotopes: 'One stable isotope: beryllium-9.',
+    atomicMass: 'Atomic mass: 9.0122 u'
+  },
+  'Boron': {
+    electronicConfiguration: 'Boron has 5 electrons (1s² 2s² 2p¹)',
+    isotopes: 'Two stable isotopes: boron-10 and boron-11.',
+    atomicMass: 'Atomic mass: 10.81 u'
+  },
+  'Carbon': {
+    electronicConfiguration: 'Carbon has 6 electrons (1s² 2s² 2p²)',
+    isotopes: 'Two stable isotopes: carbon-12 and carbon-13.',
+    atomicMass: 'Atomic mass: 12.011 u'
+  },
+  'Nitrogen': {
+    electronicConfiguration: 'Nitrogen has 7 electrons (1s² 2s² 2p³)',
+    isotopes: 'Two stable isotopes: nitrogen-14 and nitrogen-15.',
+    atomicMass: 'Atomic mass: 14.007 u'
+  },
+  'Oxygen': {
+    electronicConfiguration: 'Oxygen has 8 electrons (1s² 2s² 2p⁴)',
+    isotopes: 'Four stable isotopes: oxygen-16, oxygen-17, oxygen-18, and oxygen-28.',
+    atomicMass: 'Atomic mass: 15.999 u'
+  },
+  'Fluorine': {
+    electronicConfiguration: 'Fluorine has 9 electrons (1s² 2s² 2p⁵)',
+    isotopes: 'One stable isotope: fluorine-19.',
+    atomicMass: 'Atomic mass: 18.998 u'
+  },
+  'Neon': {
+    electronicConfiguration: 'Neon has 10 electrons (1s² 2s² 2p⁶)',
+    isotopes: 'Three stable isotopes: neon-20, neon-21, and neon-22.',
+    atomicMass: 'Atomic mass: 20.179 u'
+  },
+  'Sodium': {
+    electronicConfiguration: 'Sodium has 11 electrons (1s² 2s² 2p⁶ 3s¹)',
+    isotopes: 'Two stable isotopes: sodium-23 and sodium-24.',
+    atomicMass: 'Atomic mass: 22.99 u'
+  },
+  'Magnesium': {
+    electronicConfiguration: 'Magnesium has 12 electrons (1s² 2s² 2p⁶ 3s²)',
+    isotopes: 'Three stable isotopes: magnesium-24, magnesium-25, and magnesium-26.',
+    atomicMass: 'Atomic mass: 24.305 u'
+  },
+  'Aluminum': {
+    electronicConfiguration: 'Aluminum has 13 electrons (1s² 2s² 2p⁶ 3s² 3p¹)',
+    isotopes: 'Two stable isotopes: aluminum-27 and aluminum-28.',
+    atomicMass: 'Atomic mass: 26.98 u'
+  },
+  'Silicon': {
+    electronicConfiguration: 'Silicon has 14 electrons (1s² 2s² 2p⁶ 3s² 3p²)',
+    isotopes: 'Three stable isotopes: silicon-28, silicon-29, and silicon-30.',
+    atomicMass: 'Atomic mass: 28.085 u'
+  },
+  'Phosphorus': {
+    electronicConfiguration: 'Phosphorus has 15 electrons (1s² 2s² 2p⁶ 3s² 3p³)',
+    isotopes: 'Three stable isotopes: phosphorus-31, phosphorus-32, and phosphorus-33.',
+    atomicMass: 'Atomic mass: 30.97 u'
+  },
+  'Sulfur': {
+    electronicConfiguration: 'Sulfur has 16 electrons (1s² 2s² 2p⁶ 3s² 3p⁴)',
+    isotopes: 'Four stable isotopes: sulfur-32, sulfur-33, sulfur-34, and sulfur-36.',
+    atomicMass: 'Atomic mass: 32.06 u'
+  },
+  'Chlorine': {
+    electronicConfiguration: 'Chlorine has 17 electrons (1s² 2s² 2p⁶ 3s² 3p⁵)',
+    isotopes: 'Two stable isotopes: chlorine-35 and chlorine-37.',
+    atomicMass: 'Atomic mass: 35.45 u'
+  },
+  'Argon': {
+    electronicConfiguration: 'Argon has 18 electrons (1s² 2s² 2p⁶ 3s² 3p⁶)',
+    isotopes: 'Three stable isotopes: argon-36, argon-38, and argon-40.',
+    atomicMass: 'Atomic mass: 39.95 u'
+  },
+  'Potassium': {
+    electronicConfiguration: 'Potassium has 19 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s¹)',
+    isotopes: 'Two stable isotopes: potassium-39 and potassium-41.',
+    atomicMass: 'Atomic mass: 39.098 u'
+  },
+  'Calcium': {
+    electronicConfiguration: 'Calcium has 20 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s²)',
+    isotopes: 'Five stable isotopes: calcium-40, calcium-42, calcium-43, calcium-44, and calcium-46.',
+    atomicMass: 'Atomic mass: 40.078 u'
+  },
+  'Scandium': {
+    electronicConfiguration: 'Scandium has 21 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹)',
+    isotopes: 'Three stable isotopes: scandium-45, scandium-46, and scandium-47.',
+    atomicMass: 'Atomic mass: 44.956 u'
+  },
+  'Titanium': {
+    electronicConfiguration: 'Titanium has 22 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d²)',
+    isotopes: 'Five stable isotopes: titanium-46, titanium-47, titanium-48, titanium-49, and titanium-50.',
+    atomicMass: 'Atomic mass: 47.867 u'
+  },
+  'Vanadium': {
+    electronicConfiguration: 'Vanadium has 23 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d³)',
+    isotopes: 'Two stable isotopes: vanadium-50 and vanadium-51.',
+    atomicMass: 'Atomic mass: 50.942 u'
+  },
+  'Chromium': {
+    electronicConfiguration: 'Chromium has 24 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d⁴)',
+    isotopes: 'Three stable isotopes: chromium-50, chromium-52, and chromium-53.',
+    atomicMass: 'Atomic mass: 51.996 u'
+  },
+  'Manganese': {
+    electronicConfiguration: 'Manganese has 25 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d⁵)',
+    isotopes: 'Two stable isotopes: manganese-55 and manganese-54.',
+    atomicMass: 'Atomic mass: 54.938 u'
+  },
+  'Iron': {
+    electronicConfiguration: 'Iron has 26 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d⁶)',
+    isotopes: 'Four stable isotopes: iron-54, iron-56, iron-57, and iron-58.',
+    atomicMass: 'Atomic mass: 55.845 u'
+  },
+  'Cobalt': {
+    electronicConfiguration: 'Cobalt has 27 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d⁷)',
+    isotopes: 'Two stable isotopes: cobalt-59 and cobalt-58.',
+    atomicMass: 'Atomic mass: 58.933 u'
+  },
+  'Nickel': {
+    electronicConfiguration: 'Nickel has 28 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d⁸)',
+    isotopes: 'Five stable isotopes: nickel-58, nickel-60, nickel-61, nickel-62, and nickel-64.',
+    atomicMass: 'Atomic mass: 58.693 u'
+  },
+  'Copper': {
+    electronicConfiguration: 'Copper has 29 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰)',
+    isotopes: 'Two stable isotopes: copper-63 and copper-65.',
+    atomicMass: 'Atomic mass: 63.546 u'
+  },
+  'Zinc': {
+    electronicConfiguration: 'Zinc has 30 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p¹)',
+    isotopes: 'Two stable isotopes: zinc-64 and zinc-66.',
+    atomicMass: 'Atomic mass: 65.38 u'
+  },
+  'Gallium': {
+    electronicConfiguration: 'Gallium has 31 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p²)',
+    isotopes: 'Three stable isotopes: gallium-69, gallium-71, and gallium-72.',
+    atomicMass: 'Atomic mass: 69.723 u'
+  },
+  'Germanium': {
+    electronicConfiguration: 'Germanium has 32 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p³)',
+    isotopes: 'Four stable isotopes: germanium-70, germanium-72, germanium-73, and germanium-74.',
+    atomicMass: 'Atomic mass: 72.61 u'
+  },
+  'Arsenic': {
+    electronicConfiguration: 'Arsenic has 33 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁴)',
+    isotopes: 'Two stable isotopes: arsenic-75 and arsenic-77.',
+    atomicMass: 'Atomic mass: 74.922 u'
+  },
+  'Selenium': {
+    electronicConfiguration: 'Selenium has 34 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁵)',
+    isotopes: 'Six stable isotopes: selenium-74, selenium-76, selenium-77, selenium-78, selenium-80, and selenium-82.',
+    atomicMass: 'Atomic mass: 78.971 u'
+  },
+  'Bromine': {
+    electronicConfiguration: 'Bromine has 35 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶)',
+    isotopes: 'Two stable isotopes: bromine-79 and bromine-81.',
+    atomicMass: 'Atomic mass: 79.904 u'
+  },
+  'Krypton': {
+    electronicConfiguration: 'Krypton has 36 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s²)',
+    isotopes: 'Five stable isotopes: krypton-78, krypton-80, krypton-82, krypton-83, and krypton-84.',
+    atomicMass: 'Atomic mass: 83.798 u'
+  },
+  'Rubidium': {
+    electronicConfiguration: 'Rubidium has 37 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s¹)',
+    isotopes: 'Two stable isotopes: rubidium-85 and rubidium-87.',
+    atomicMass: 'Atomic mass: 85.468 u'
+  },
+  'Strontium': {
+    electronicConfiguration: 'Strontium has 38 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s²)',
+    isotopes: 'Four stable isotopes: strontium-84, strontium-86, strontium-87, and strontium-88.',
+    atomicMass: 'Atomic mass: 87.62 u'
+  },
+  'Yttrium': {
+    electronicConfiguration: 'Yttrium has 39 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹)',
+    isotopes: 'Two stable isotopes: yttrium-89 and yttrium-90.',
+    atomicMass: 'Atomic mass: 88.906 u'
+  },
+  'Zirconium': {
+    electronicConfiguration: 'Zirconium has 40 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d²)',
+    isotopes: 'Five stable isotopes: zirconium-90, zirconium-91, zirconium-92, zirconium-94, and zirconium-96.',
+    atomicMass: 'Atomic mass: 91.224 u'
+  },
+  'Niobium': {
+    electronicConfiguration: 'Niobium has 41 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d³)',
+    isotopes: 'One stable isotope: niobium-93.',
+    atomicMass: 'Atomic mass: 92.906 u'
+  },
+  'Molybdenum': {
+    electronicConfiguration: 'Molybdenum has 42 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d⁵)',
+    isotopes: 'Seven stable isotopes: molybdenum-92, molybdenum-94, molybdenum-95, molybdenum-96, molybdenum-97, molybdenum-98, and molybdenum-100.',
+    atomicMass: 'Atomic mass: 95.95 u'
+  },
+  'Technetium': {
+    electronicConfiguration: 'Technetium has 43 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d⁶)',
+    isotopes: 'No stable isotopes.',
+    atomicMass: 'Atomic mass: 98 u'
+  },
+  'Ruthenium': {
+    electronicConfiguration: 'Ruthenium has 44 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d⁷)',
+    isotopes: 'Ten stable isotopes: ruthenium-96, ruthenium-98, ruthenium-99, ruthenium-100, ruthenium-101, ruthenium-102, ruthenium-104, ruthenium-105, ruthenium-106, and ruthenium-108.',
+    atomicMass: 'Atomic mass: 101.07 u'
+  },
+  'Rhodium': {
+    electronicConfiguration: 'Rhodium has 45 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d⁸)',
+    isotopes: 'Five stable isotopes: rhodium-103, rhodium-105, rhodium-106, rhodium-107, and rhodium-108.',
+    atomicMass: 'Atomic mass: 102.91 u'
+  },
+  'Palladium': {
+    electronicConfiguration: 'Palladium has 46 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d⁹)',
+    isotopes: 'Six stable isotopes: palladium-102, palladium-104, palladium-105, palladium-106, palladium-108, and palladium-110.',
+    atomicMass: 'Atomic mass: 106.42 u'
+  },
+  'Silver': {
+    electronicConfiguration: 'Silver has 47 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s¹)',
+    isotopes: 'Two stable isotopes: silver-107 and silver-109.',
+    atomicMass: 'Atomic mass: 107.87 u'
+  },
+  'Cadmium': {
+    electronicConfiguration: 'Cadmium has 48 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s²)',
+    isotopes: 'Four stable isotopes: cadmium-110, cadmium-111, cadmium-112, and cadmium-114.',
+    atomicMass: 'Atomic mass: 112.41 u'
+  },
+  'Indium': {
+    electronicConfiguration: 'Indium has 49 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 5p¹)',
+    isotopes: 'Two stable isotopes: indium-113 and indium-115.',
+    atomicMass: 'Atomic mass: 114.82 u'
+  },
+  'Tin': {
+    electronicConfiguration: 'Tin has 50 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p²)',
+    isotopes: 'Tin has ten stable isotopes, with atomic masses ranging from 112 to 124.',
+    atomicMass: 'Atomic mass: 118.71 u'
+  },
+  'Antimony': {
+    electronicConfiguration: 'Antimony has 51 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p³)',
+    isotopes: 'Two stable isotopes: antimony-121 and antimony-123.',
+    atomicMass: 'Atomic mass: 121.76 u'
+  },
+  'Tellurium': {
+    electronicConfiguration: 'Tellurium has 52 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁴)',
+    isotopes: 'Eight stable isotopes, with atomic masses ranging from 120 to 130.',
+    atomicMass: 'Atomic mass: 127.60 u'
+  },
+  'Iodine': {
+    electronicConfiguration: 'Iodine has 53 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁵)',
+    isotopes: 'Iodine has one stable isotope: iodine-127.',
+    atomicMass: 'Atomic mass: 126.90 u'
+  },
+  'Xenon': {
+    electronicConfiguration: 'Xenon has 54 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶)',
+    isotopes: 'Nine stable isotopes, with atomic masses ranging from 124 to 136.',
+    atomicMass: 'Atomic mass: 131.29 u'
+  },
+  'Cesium': {
+    electronicConfiguration: 'Cesium has 55 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s¹)',
+    isotopes: 'Cesium has one stable isotope: cesium-133.',
+    atomicMass: 'Atomic mass: 132.91 u'
+  },
+  'Barium': {
+    electronicConfiguration: 'Barium has 56 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s²)',
+    isotopes: 'Barium has seven stable isotopes, with atomic masses ranging from 130 to 138.',
+    atomicMass: 'Atomic mass: 137.33 u'
+  },
+  'Lanthanum': {
+    electronicConfiguration: 'Lanthanum has 57 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹)',
+    isotopes: 'Lanthanum has one stable isotope: lanthanum-139.',
+    atomicMass: 'Atomic mass: 138.91 u'
+  },
+  'Cerium': {
+    electronicConfiguration: 'Cerium has 58 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f²)',
+    isotopes: 'Cerium has four stable isotopes, with atomic masses ranging from 136 to 142.',
+    atomicMass: 'Atomic mass: 140.12 u'
+  },
+  'Praseodymium': {
+    electronicConfiguration: 'Praseodymium has 59 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f³)',
+    isotopes: 'Praseodymium has one stable isotope: praseodymium-141.',
+    atomicMass: 'Atomic mass: 140.91 u'
+  },
+  'Neodymium': {
+    electronicConfiguration: 'Neodymium has 60 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d⁴)',
+    isotopes: 'Neodymium has seven stable isotopes, with atomic masses ranging from 142 to 148.',
+    atomicMass: 'Atomic mass: 144.24 u'
+  },
+  'Promethium': {
+    electronicConfiguration: 'Promethium has 61 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d⁵)',
+    isotopes: 'Promethium has one stable isotope: promethium-145.',
+    atomicMass: 'Atomic mass: (145) u'
+  },
+  'Samarium': {
+    electronicConfiguration: 'Samarium has 62 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f⁶)',
+    isotopes: 'Samarium has seven stable isotopes, with atomic masses ranging from 144 to 152.',
+    atomicMass: 'Atomic mass: 150.36 u'
+  },
+  'Europium': {
+    electronicConfiguration: 'Europium has 63 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f⁷)',
+    isotopes: 'Europium has two stable isotopes: europium-151 and europium-153.',
+    atomicMass: 'Atomic mass: 151.96 u'
+  },
+  'Gadolinium': {
+    electronicConfiguration: 'Gadolinium has 64 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f⁷ 5d¹)',
+    isotopes: 'Gadolinium has six stable isotopes, with atomic masses ranging from 152 to 158.',
+    atomicMass: 'Atomic mass: 157.25 u'
+  },
+  'Terbium': {
+    electronicConfiguration: 'Terbium has 65 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f⁹)',
+    isotopes: 'Terbium has one stable isotope: terbium-159.',
+    atomicMass: 'Atomic mass: 158.93 u'
+  },
+  'Dysprosium': {
+    electronicConfiguration: 'Dysprosium has 66 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁰)',
+    isotopes: 'Dysprosium has seven stable isotopes, with atomic masses ranging from 156 to 164.',
+    atomicMass: 'Atomic mass: 162.50 u'
+  },
+  'Holmium': {
+    electronicConfiguration: 'Holmium has 67 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹¹)',
+    isotopes: 'Holmium has one stable isotope: holmium-165.',
+    atomicMass: 'Atomic mass: 164.93 u'
+  },
+  'Erbium': {
+    electronicConfiguration: 'Erbium has 68 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹²)',
+    isotopes: 'Erbium has six stable isotopes, with atomic masses ranging from 162 to 170.',
+    atomicMass: 'Atomic mass: 167.26 u'
+  },
+  'Thulium': {
+    electronicConfiguration: 'Thulium has 69 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹³)',
+    isotopes: 'Thulium has one stable isotope: thulium-169.',
+    atomicMass: 'Atomic mass: 168.93 u'
+  },
+  'Ytterbium': {
+    electronicConfiguration: 'Ytterbium has 70 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴)',
+    isotopes: 'Ytterbium has seven stable isotopes, with atomic masses ranging from 168 to 176.',
+    atomicMass: 'Atomic mass: 173.05 u'
+  },
+  'Lutetium': {
+    electronicConfiguration: 'Lutetium has 71 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹)',
+    isotopes: 'Lutetium has one stable isotope: lutetium-175.',
+    atomicMass: 'Atomic mass: 174.97 u'
+  },
+  'Hafnium': {
+    electronicConfiguration: 'Hafnium has 72 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d²)',
+    isotopes: 'Hafnium has six stable isotopes, with atomic masses ranging from 174 to 180.',
+    atomicMass: 'Atomic mass: 178.49 u'
+  },
+  'Tantalum': {
+    electronicConfiguration: 'Tantalum has 73 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d³)',
+    isotopes: 'Tantalum has two stable isotopes: tantalum-180 and tantalum-181.',
+    atomicMass: 'Atomic mass: 180.95 u'
+  },
+  'Tungsten': {
+    electronicConfiguration: 'Tungsten has 74 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d⁴)',
+    isotopes: 'Tungsten has five stable isotopes, with atomic masses ranging from 180 to 186.',
+    atomicMass: 'Atomic mass: 183.84 u'
+  },
+  'Rhenium': {
+    electronicConfiguration: 'Rhenium has 75 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d⁵)',
+    isotopes: 'Rhenium has one stable isotope: rhenium-185.',
+    atomicMass: 'Atomic mass: 186.21 u'
+  },
+  'Osmium': {
+    electronicConfiguration: 'Osmium has 76 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d⁶)',
+    isotopes: 'Osmium has seven stable isotopes, with atomic masses ranging from 184 to 190.',
+    atomicMass: 'Atomic mass: 190.23 u'
+  },
+  'Iridium': {
+    electronicConfiguration: 'Iridium has 77 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d⁷)',
+    isotopes: 'Iridium has two stable isotopes: iridium-191 and iridium-193.',
+    atomicMass: 'Atomic mass: 192.22 u'
+  },
+  'Platinum': {
+    electronicConfiguration: 'Platinum has 78 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d⁹)',
+    isotopes: 'Platinum has six stable isotopes, with atomic masses ranging from 190 to 198.',
+    atomicMass: 'Atomic mass: 195.08 u'
+  },
+  'Gold': {
+    electronicConfiguration: 'Gold has 79 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰)',
+    isotopes: 'Gold has one stable isotope: gold-197.',
+    atomicMass: 'Atomic mass: 196.97 u'
+  },
+  'Mercury': {
+    electronicConfiguration: 'Mercury has 80 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰)',
+    isotopes: 'Mercury has seven stable isotopes, with atomic masses ranging from 196 to 204.',
+    atomicMass: 'Atomic mass: 200.59 u'
+  },
+  'Thallium': {
+    electronicConfiguration: 'Thallium has 81 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p¹)',
+    isotopes: 'Thallium has two stable isotopes: thallium-203 and thallium-205.',
+    atomicMass: 'Atomic mass: 204.38 u'
+  },
+  'Lead': {
+    electronicConfiguration: 'Lead has 82 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p²)',
+    isotopes: 'Lead has four stable isotopes, with atomic masses ranging from 202 to 208.',
+    atomicMass: 'Atomic mass: 207.2 u'
+  },
+  'Bismuth': {
+    electronicConfiguration: 'Bismuth has 83 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p³)',
+    isotopes: 'Bismuth has one stable isotope: bismuth-209.',
+    atomicMass: 'Atomic mass: 208.98 u'
+  },
+  'Polonium': {
+    electronicConfiguration: 'Polonium has 84 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁴)',
+    isotopes: 'Polonium has 33 isotopes, with polonium-210 being the most stable.',
+    atomicMass: 'Atomic mass: (209) u'
+  },
+  'Astatine': {
+    electronicConfiguration: 'Astatine has 85 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁵)',
+    isotopes: 'Astatine has 33 isotopes, with astatine-210 being the most stable.',
+    atomicMass: 'Atomic mass: (210) u'
+  },
+  'Radon': {
+    electronicConfiguration: 'Radon has 86 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶)',
+    isotopes: 'Radon has nine isotopes, with radon-222 being the most stable.',
+    atomicMass: 'Atomic mass: 222 u'
+  },
+  'Francium': {
+    electronicConfiguration: 'Francium has 87 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s¹)',
+    isotopes: 'Francium has one stable isotope: francium-223.',
+    atomicMass: 'Atomic mass: (223) u'
+  },
+  'Radium': {
+    electronicConfiguration: 'Radium has 88 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s²)',
+    isotopes: 'Radium has six isotopes, with radium-226 being the most stable.',
+    atomicMass: 'Atomic mass: 226 u'
+  },
+  'Actinium': {
+    electronicConfiguration: 'Actinium has 89 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f⁰)',
+    isotopes: 'Actinium has one stable isotope: actinium-227.',
+    atomicMass: 'Atomic mass: (227) u'
+  },
+  'Thorium': {
+    electronicConfiguration: 'Thorium has 90 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f²)',
+    isotopes: 'Thorium has one stable isotope: thorium-232.',
+    atomicMass: 'Atomic mass: 232.04 u'
+  },
+  'Protactinium': {
+    electronicConfiguration: 'Protactinium has 91 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f³)',
+    isotopes: 'Protactinium has one stable isotope: protactinium-231.',
+    atomicMass: 'Atomic mass: 231.04 u'
+  },
+  'Uranium': {
+    electronicConfiguration: 'Uranium has 92 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f⁴)',
+    isotopes: 'Uranium has three naturally occurring isotopes: uranium-238, uranium-235, and uranium-234.',
+    atomicMass: 'Atomic mass: 238.03 u'
+  },
+  'Neptunium': {
+    electronicConfiguration: 'Neptunium has 93 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f⁵)',
+    isotopes: 'Neptunium has five isotopes, with neptunium-237 being the most stable.',
+    atomicMass: 'Atomic mass: (237) u'
+  },
+  'Plutonium': {
+    electronicConfiguration: 'Plutonium has 94 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f⁶)',
+    isotopes: 'Plutonium has six isotopes, with plutonium-244 being the most stable.',
+    atomicMass: 'Atomic mass: (244) u'
+  },
+  'Americium': {
+    electronicConfiguration: 'Americium has 95 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f⁷)',
+    isotopes: 'Americium has 19 isotopes, with americium-243 being the most stable.',
+    atomicMass: 'Atomic mass: (243) u'
+  },
+  'Curium': {
+    electronicConfiguration: 'Curium has 96 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f⁷ 6d¹)',
+    isotopes: 'Curium has 20 isotopes, with curium-247 being the most stable.',
+    atomicMass: 'Atomic mass: (247) u'
+  },
+  'Berkelium': {
+    electronicConfiguration: 'Berkelium has 97 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f⁹)',
+    isotopes: 'Berkelium has 22 isotopes, with berkelium-247 being the most stable.',
+    atomicMass: 'Atomic mass: (247) u'
+  },
+  'Californium': {
+    electronicConfiguration: 'Californium has 98 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f¹⁰)',
+    isotopes: 'Californium has 20 isotopes, with californium-251 being the most stable.',
+    atomicMass: 'Atomic mass: (251) u'
+  },
+  'Einsteinium': {
+    electronicConfiguration: 'Einsteinium has 99 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f¹¹)',
+    isotopes: 'Einsteinium has 19 isotopes, with einsteinium-252 being the most stable.',
+    atomicMass: 'Atomic mass: (252) u'
+  },
+  'Fermium': {
+    electronicConfiguration: 'Fermium has 100 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f¹²)',
+    isotopes: 'Fermium has 20 isotopes, with fermium-257 being the most stable.',
+    atomicMass: 'Atomic mass: (257) u'
+  },
+  'Mendelevium': {
+    electronicConfiguration: 'Mendelevium has 101 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f¹³)',
+    isotopes: 'Mendelevium has 17 isotopes, with mendelevium-258 being the most stable.',
+    atomicMass: 'Atomic mass: (258) u'
+  },
+  'Nobelium': {
+    electronicConfiguration: 'Nobelium has 102 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f¹⁴)',
+    isotopes: 'Nobelium has 12 isotopes, with nobelium-259 being the most stable.',
+    atomicMass: 'Atomic mass: (259) u'
+  },
+  'Lawrencium': {
+  electronicConfiguration: 'Lawrencium has 103 electrons (1s² 2s² 2p⁶ 3s² 3p⁶ 4s² 3d¹⁰ 4p⁶ 5s² 4d¹⁰ 5p⁶ 6s² 4f¹⁴ 5d¹⁰ 6p⁶ 7s² 5f¹⁴ 6d¹)',
+    isotopes: 'Lawrencium has 12 isotopes, with lawrencium-266 being the most stable.',
+    atomicMass: 'Atomic mass: (266) u'
+  }
+};
+
+    
+        const properties = chemicalProperties[element];
+    
+        // Update the HTML with the chemical properties
+        const propertiesList = document.getElementById('chemical_properties');
+        document.getElementById('chemical_properties').style.display = 'block';
+        propertiesList.innerHTML = `
+          <h2>Chemical Properties of ${element}:</h2>
+          <ol>
+            <li><strong>Electronic Configuration:</strong><br>${properties.electronicConfiguration}</li>
+            <li><strong>Atomic Mass:</strong><br>${properties.atomicMass}</li>
+            <li><strong>Isotopes:</strong><br>${properties.isotopes}</li>
+            
+          </ol>
+        `;
+      }
+    </script>
+    
+  </body>
+</html>
